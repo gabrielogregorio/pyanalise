@@ -1,7 +1,8 @@
 from pyanalise import compare
+cp = compare()
 
-while True:
-    a = input('Digite a primeira frase: ')
-    b = input('Digite a segunda frase : ')
-    print("A semelhança entre '{}' e '{}' é de {}% \n".format(a,b,compare.frase(a,b)))
-
+frase1 = 'Olá, tudo Meu doce favorito é ameba'
+frase2 = 'iai, tudo Meu doce predileto é ameba'
+ 
+res = cp.compara_palavras(frase1, frase2)
+print(res)

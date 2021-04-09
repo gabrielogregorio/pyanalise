@@ -1,35 +1,127 @@
-# ! / usr / bin / python3
-# - * - codificação: utf-8 - * -
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
-__author__       =  ' Gabriel Gregório da Silva '
-__email__        =  ' gabriel.gregorio.1@outlook.com '
-__description__  =  ' Comparador de frases'
-__status__       =  ' Desenvolvimento '
-__DATE__         =  ' 05/04/2019 '
-__version__      =  ' 1.1'
+__author__       = 'Gabriel Gregório da Silva'
+__email__        = 'gabriel.gregorio.1@outlook.com'
+__description__  = 'Compara duas palavras'
+__status__       = 'Development'
+__last_update__  = '09/04/2021'
+__version__      = '0.3'
 
+import unidecode
+import json
 
-# Módulo pyanalise
 class compare():
+    def __init__(self):
+        # Carrega dados na memória
+        self.dict_words = {}
+
+        with open('classes.json', 'r', encoding='utf-8') as f:
+            self.dict_classes = json.loads(f.read())
+
+        # Percorre as classes e a lista de palavras
+        # correspondente a uma classe
+        for classe, palavras in self.dict_classes.items():
+            lista = []
+            for palavra in palavras:
+                lista.append(unidecode.unidecode(palavra))
+            
+            self.dict_classes[classe] = lista
+
+        # Percorre as classes e a lista de palavras
+        # correspondente a uma classe
+        for classe, palavras in self.dict_classes.items():
+            for palavra in palavras:
+                # unicode remove acentos
+                self.dict_words[unidecode.unidecode(palavra)] = classe
+
+    def __verificar_semelhanca(self, palavra1:str, palavra2:str) -> bool:
+        palavra1 = unidecode.unidecode(palavra1)
+        palavra2 = unidecode.unidecode(palavra2)
+        
+        # Verifica se a palavra existe no
+        # contexto do dicionário de palavras
+        if self.dict_words.get(palavra1):
+            # Lista de palavras similares
+            if palavra2 in self.dict_classes[self.dict_words[palavra1]]:
+                # palavra é sinônimo
+                return True
+        return False
+
+    def __reconstruir_frases(self, lista:list) -> list:
+        frase = ""
+        for palavra in lista:
+            frase = frase + ' ' + palavra
+        return frase.strip()
+
+    def __normalizar_frase(self, frase1:str, frase2:str) -> tuple:
+        frase1 = frase1.strip().lower()
+        frase2 = frase2.strip().lower()
+
+        l_frase1 = frase1.split(' ')
+        l_frase2 = frase2.split(' ')
+        
+        if len(l_frase2) > len(l_frase1):
+            l_maior_frase = l_frase2
+            l_menor_frase = l_frase1
+        else:
+            l_maior_frase = l_frase1
+            l_menor_frase = l_frase2
+
+        for palavra_maior_frase in l_maior_frase:
+            for n_menor_frase in range(len(l_menor_frase)):
+                palavra_menor_frase = l_menor_frase[n_menor_frase]
+                
+                if self.__verificar_semelhanca(palavra_maior_frase, palavra_menor_frase):
+                    l_menor_frase[n_menor_frase] = palavra_maior_frase
+
+        return (self.__reconstruir_frases(l_menor_frase), self.__reconstruir_frases(l_maior_frase)) 
+
     # Inicia a comparação
-    def frase(a,b):
+    def compara_palavras(self, menor:str, maior:str) -> int: 
+        lista_remover = ['?', '!', ',']
+
+        for item in lista_remover:
+            menor = menor.replace(item, ' ')
+            maior = maior.replace(item, ' ')
+
+        menor = menor.replace('@', 'a')
+        maior = maior.replace('@', 'a')
+
+        menor = menor.strip().lower()
+        maior = maior.strip().lower()
+
+        menor = menor.replace('  ', ' ')
+        maior = maior.replace('  ', ' ')
+
         # Dados inválidos
-        if a == '' or b == '' or a.isspace() or b.isspace():
+        if menor == '' or menor == '' or menor.isspace() or menor.isspace():
             return 0
+        
         # o 'b' tem que ser maior que o 'a' ou no minimo igual!
-        if len(a)>len(b):
-            c = b
-            b = a
-            a = c
+        if len(menor) > len(maior):
+            c = maior
+            maior = menor
+            menor = c
+        
+        # Normalizar Frase
+
+        menor, maior = self.__normalizar_frase(menor, maior)
+        # o 'b' tem que ser maior que o 'a' ou no minimo igual!
+        if len(menor) > len(maior):
+            c = maior
+            maior = menor
+            menor = c
+
         # Remoção de espaços | Todos para minisculos | Adição de espaços | Para lista
-        a = a.replace(' ','').lower()
-        b = b.replace(' ','').lower()
+        menor = menor.replace(' ','').lower()
+        maior = maior.replace(' ','').lower()
 
-        # Retorna a soma entre a análise por letras e a análise por duas silabas
-        return (int(compare.letras(a,b)) + int(compare.bisilabas(a,b)))
+        # Retorna a soma entre a análise por __letras e a análise por duas silabas
+        __letras, bissilabas = int(self.__letras(menor, maior)), int(self.__bisilabas(menor, maior))
+        return __letras+bissilabas
 
-
-    def letras(a,b):
+    def __letras(self, a:str, b:str) -> int:
         # Isolamento das variáveis 'a' e 'b'
         a_1 = a
         b_1 = b
@@ -45,7 +137,7 @@ class compare():
         # Salva o total de posições na maior variável isolada (b)
         total_b = len(b_1)
 
-        # Processamento de letras
+        # Processamento de __letras
         for x in a_1:
             for y in b_1:
                 if x == y:
@@ -55,11 +147,10 @@ class compare():
         try:
             return ((50/total_b)*(total_b-len(b_1)))
         except:
-            print("Erro na saida da definição letras")
+            print("Erro na saida da definição __letras")
             return 0
 
-
-    def bisilabas(a,b):
+    def __bisilabas(self, a:str, b:str) -> int:
         # Isolamento das variáveis 'a' e 'b'
         ab = a
         bb = b
@@ -72,10 +163,11 @@ class compare():
         x = 0
         y = 0
 
-        # Loops de 2 em 2 para criar uma lista de bisilabas
+        # Loops de 2 em 2 para criar uma lista de __bisilabas
         while y < len(ab):
             c.append(ab[y:y+2])
             y=y+1
+
         while x < len(bb):
             d.append(bb[x:x+2])
             x=x+1
